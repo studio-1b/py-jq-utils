@@ -79,25 +79,51 @@ def get_stdin():
 def to_bins(lst):
     last=None
     b=[]
-    for i in range(0,lst.length,2):
-      o={bin:lst[i], min:last, max:lst[i+1], count:0 }
+    for i in range(0,len(lst)-1,2):
+      o={"bin":lst[i], "min":last, "max":float(lst[i+1]), "count":0 }
       b.append(o)
-      print(o)
-    o={bin:lst[lst.length-1], min:last, max:None, count:0 }
+      last=float(lst[i+1])
+      #print(o)
+    o={"bin":lst[len(lst)-1], "min":float(last), "max":None, "count":0 }
     b.append(o)
     return b;
 
+def get_key(o,key):
+#    print(key)
+#    print(o)
+    result=None
+    parts=key.split('.')
+    L  = len(parts)
+    if L>=2:
+      for i in range(1,L):
+        #print(i)
+        #print(parts[i])
+        o = o[parts[i]]
+        result = o #result[parts[i]]
+      return result
+    else:
+      return None
+
 def count(bins,o,key):
-    value = o[key]
+#    value = o[key]
+    value = get_key(o,key)
+    #print("counting")
+    #print(bins)
+    #print(value)
     for b in bins:
-      if b.min==None and value<b.max:
-        b.count+=1
+      binmin = b["min"]
+      binmax = b["max"]
+      if binmin==None and value<binmax:
+        b["count"]+=1
+        #print(b["bin"])
         break
-      elif b.max==None and b.min<value:
-        b.count+=1
+      elif binmax==None and binmin<value:
+        b["count"]+=1
+        #print(b["bin"])
         break
-      elif b.min<value and value<b.max:
-        b.count+=1
+      elif binmin!=None and binmax!=None and binmin <value and value<binmax:
+        b["count"]+=1
+        #print(b["bin"])
         break
     return value
 
@@ -114,22 +140,24 @@ if len(sys.argv) < 4:
 bins=[]
 L = len(sys.argv)
 if L % 2 == 0:
-  b=to_bins(sys.argv[1:L]);
+  bins=to_bins(sys.argv[1:L]);
 else:
-  b=to_bins(sys.argv[1:L-1]);
-
+  bins=to_bins(sys.argv[1:L-1]);
 
 
 # this branch loads the files into memory, processes joins
 is_pipe = not isatty(sys.stdin.fileno())
 if is_pipe:
-    #value = map(lambda s: {"origin":{"lat":lat,"lon":lon}, "lat":s["lat"], "lon":s["lon"], "dist":calc_distance(gpx,s)}, get_stdin())
-    value = map(lambda s: count(bins,s), get_stdin())
+    key=sys.argv[L-1]
 
+    #value = map(lambda s: {"origin":{"lat":lat,"lon":lon}, "lat":s["lat"], "lon":s["lon"], "dist":calc_distance(gpx,s)}, get_stdin())
+    counted = map(lambda s: count(bins,s,key), get_stdin())
+    for item in counted:
+        pass
     try:
         for item in bins:
             print( json.dumps(item) )
-            sys.stdout.flush() 
+            sys.stdout.flush()
     except KeyboardInterrupt:
         pass
 
@@ -137,4 +165,3 @@ if is_pipe:
 else:
     sys.stderr.write("no data\n")
     exit(1)
-

@@ -2,6 +2,10 @@
 Some extra utilities built in python, to make jq more useful
 
 
+## Why do you need this?
+jq is command line JSON parser, that can do queries, and transform into other JSON.
+This will add some simple programs to augment jq's functionality.  And some are simple enough, for you to clone and change for your own purposes.
+
 
 ## Requirement
 Install jq
@@ -14,22 +18,22 @@ Install 7z
 sudo apt install p7zip-full
 ```
 
-jq is command line JSON parser, that can do queries, and transform into other JSON.
 
-make the python files, into executeable shell scripts
+Now, make the python files, into executeable shell scripts
 ```
 chmod +x *.py
 ```
 
-The .py files all have schbang at top of file, to tell bash, what interpreter to run the script.  Otherwise, you need to run them as python programs:
+Explanation for above: The .py files all have schbang at top of file, to tell bash, what interpreter to run the script.  Otherwise, you need to run them as python programs:
 ```
 python <program>.py <arguments>
 ```
 
-The "./" at beginning of each .py command, is b/c in Linux, the current directory "." is usually not defaulted to by, being in the command search $PATH variable.  So to get around that, we explcitly tell it which directory the command is in.
+Explanation for sample below: The "./" at beginning of each .py command, is b/c in Linux, the current directory "." is usually not defaulted to by, being in the command search $PATH variable.  So to get around that, we explcitly tell it which directory the command is in.
 
 
-## test data
+
+## Extracting Test data for sample
 extract test data to try samples
 ```
 7z x testdata.7z
@@ -37,7 +41,7 @@ extract test data to try samples
 
 
 
-## distfrom.py
+## Program: distfrom.py
 Make complex calculated field, too complicated to use a JSON transform for:
 ```
 jq -c . gpspipe_json/*.json  |./distfrom.py 49.199170 -122.979457
@@ -49,9 +53,11 @@ You can make a simple JSON transform in jq, without using a external program, to
 jq {timestamp:, lat:.lat, lon:.lon, delta_lat:(.lat-49.199170), delta:(.lon-(-122.979457))} gpspipe_json/*.json 
 ```
 adds a distance in meters field, to every JSON object, recording distance from house.
+<pre>
+{... "_origin": {"lat": 49.19917, "lon": -122.979457}, "dist": 4038.909158672087}
+</pre>
 
-
-## histfrom.py
+## Program: histfrom.py
 Make a histogram from many JSON
 
 This is a sample of how to make aggregating function, to suplement jq
@@ -75,7 +81,7 @@ This is if you find creating a group by in jq, too complicated:
 This produces a JSON that shows the average of solar amps on a particular hour of the day, for every month.  .a.json.now[5:7],.a.json.now[11:13] represents the month, and hour, in the .now field.
 
 
-## jqoin.py
+## Program: jqoin.py
 "Inner Join" 2 different streams of JSON.  Correlating 2 different JSON, to single relationship
 
 You can supply just a directory as source of JSON, and parts of filename to correlate the object.  Theoretically this is fastest, but in practice I've seen no difference.  Probably bc the correlation algorithm I use, is probably unsophisticated and takes a long time, compared to the huge difference betwwen that is supposed to exist between reading filenames, and the contents of all the files.
@@ -93,18 +99,21 @@ This will create a record for each file whose .now field's first 17 characters (
 
 One of the JSON streams can be supplied by pipe redirection to stdin (but no filename match this way):
 ```
-cat gpspipe_json/* | ./jqoin.py "iperf_json/" .now:0:17 --key .now:0:17 
+cat gpspipe_json/* | ./jqoin.py "iperf_json/" .now:0:17 --key=.now:0:17 
 ```
 This will create a record for each object in gpspipe_json streamed in stdin, whose .now field's first 17 characters (so it excludes the seconds value), with a, b, and the key which contains the matching part of the value in iperf_json directory's object's .now fields.
 
 
 
 
-## testdata
-gpspipe_json has gpsdata, multiple JSON objects per file
-iperf_json has gpsdata, 1 JSON object per file
-renogy_json has gpsdata, 1 JSON object per file
-victron_json has gpsdata, only the first JSON in file is relevant
+## Explanation of testdata
+*gpspipe_json/* has gps data, multiple JSON objects per file
+
+*iperf_json/* has speedtest data, 1 JSON object per file
+
+*renogy_json/* has battery state of charge data, 1 JSON object per file
+
+*victron_json/* has solar controller data, only the first JSON in file is relevant
 
 jqjoin.py will accept multiple objects from stdin
 BUT only accepts first JSON object per file.
