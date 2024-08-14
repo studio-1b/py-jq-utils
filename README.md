@@ -32,7 +32,7 @@ The "./" at beginning of each .py command, is b/c in Linux, the current director
 ## test data
 extract test data to try samples
 ```
-7z
+7z x testdata.7z
 ```
 
 
