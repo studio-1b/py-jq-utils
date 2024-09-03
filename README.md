@@ -273,12 +273,16 @@ To add more aggregate functions,
 2. Modifying the JsonTransform class, in 2 places
     A. This is the most important step.  Adding the new class name in the
     array of classes that it will check if there is a function...
-        SUPPORTED=[AggregateCount,AggregateSum,AggregateMin,AggregateMax, \
+    ```
+    SUPPORTED=[AggregateCount,AggregateSum,AggregateMin,AggregateMax, \
         AggregateAvg,AggregateStdev,AggregateStrAppend,AggregateLstAppend, \
         AggregateLinreg, **Add the new class name**
-        ]
+    ]
+    ```
     B. Adding the name in the regex, in JsonTransform class's __init__: function.
+    ```
         regex = r"(sum|avg|min|max|count|stdev|linreg**Add same name as 1A**)\(((\.[^,\s\)]+)(,.[^,\)\s]+)*)\)" 
+    ```
     This function is just searching for a string that might be a function.  It is a shallow validation.  And used later to identify the functions in the output JSON, to later replace them
 
 
