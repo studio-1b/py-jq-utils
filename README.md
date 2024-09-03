@@ -247,7 +247,8 @@ cat victron_json/victron*.json | jq -s '.|group_by(.now[5:7],.now[11:13]) | map(
 ["07","23",1840,1279.8918918918919]
 </pre>
 
-However my groupbyjson.py is slower than jq
+> [!WARNING]
+> However my groupbyjson.py is slower than jq, in the exact same group by functionality
 <pre>
 bob@fedora:~/solarjson/victron_json$ date && cat victron*.json | jq -s '.|group_by(.now[5:7],.now[11:13]) | map([first.now[5:7],first.now[11:13],(map(.payload.battery_charging_current)| max),(map(.payload.battery_charging_current*24)| add/length),(map(.payload.yield_today)| max),(map(.payload.yield_today)| add/length)])' &>/dev/null && date
 Mon Sep  2 05:28:46 PM PDT 2024
@@ -261,7 +262,8 @@ Much slower.  6x slower.
 jq    vs groupbyjson.py
 25sec vs 2min
 
-I admit I thought I could write a more competitive version of groupby, when jq ran so slow on my pi and sometimes crashed if too many groupby elements were included.  I thought I could write a faster version in python.  I could not.  But I got groupbyjson.py working.  There is value in keeping this code around.  If I ever need to implement my own aggregate function that jq does not support, even if 6x slower, 6x slower is better than nothing.  You can add your own Aggregate functions too:
+> [!NOTE]
+> I admit I thought I could write a more competitive version of groupby, when jq ran so slow on my pi and sometimes crashed if too many groupby elements were included.  I thought I could write a faster version in python.  I could not.  But I got groupbyjson.py working.  There is value in keeping this code around.  If I ever need to implement my own aggregate function that jq does not support, even if 6x slower, 6x slower is better than nothing.  You can add your own Aggregate functions too:
 
 To add more aggregate functions, 
 1. Add new classes by copying one of the Aggregate* classes
