@@ -310,8 +310,8 @@ echo '{"a":1}{"a":2}' | jq -s
 will produce
 <pre>
 <b>[</b>
-{"a":1}<b>,</b>b>
-{"a":2}
+  {"a":1}<b>,</b>
+  {"a":2}
 <b>]</b>
 </pre>
 
@@ -322,7 +322,7 @@ cat victron_json/victron*.json | ./groupbyjson.py .now[5:7]  '{"mm":arg[0],"a":a
 should produce something like:
 <pre>
 <b>[</b>
-{"mm": "07", "a": 1295.483870967742, "b": 1840}
+  {"mm": "07", "a": 1295.483870967742, "b": 1840}
 <b>]</b>
 </pre>
 
