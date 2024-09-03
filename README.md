@@ -174,6 +174,114 @@ yUSB0", "status": 2, "mode": 3, "time": "2024-07-13T07:20:00.000Z", "ept": 0.005
 ...
 </pre>
 
+## Program: groupbyjson.py
+Write your own aggregate function.  But first, how you execute it:
+```
+./groupbyjson.py [groupby key 1]...[groupby key n] [json of aggregate]
+```
+It does NOT accept JSON array thru stdin, but a stream of JSON objects only delimited by close of a JSON object.
+
+For example, avg, count and max are implemented, and can be used like:
+```
+victron_json/victron*.json | ./groupbyjson.py .now[5:7] .now[11:13] '{"mm":arg[0],"hh":arg[1],"a":avg(.payload.yield_today),"b":max(.payload.yield_today),"c":count(.now)}' 2>/dev/null
+```
+produces
+<pre>
+{"mm": "07", "hh": "00", "a": 1295.483870967742, "b": 1840, "c": 1116}
+{"mm": "07", "hh": "01", "a": 887.5268817204301, "b": 1840, "c": 1116}
+{"mm": "07", "hh": "02", "a": 56.12903225806452, "b": 1740, "c": 1116}
+{"mm": "07", "hh": "03", "a": 37.41935483870968, "b": 1740, "c": 1116}
+{"mm": "07", "hh": "04", "a": 0.0, "b": 0, "c": 1116}
+{"mm": "07", "hh": "05", "a": 0.0, "b": 0, "c": 1116}
+{"mm": "07", "hh": "06", "a": 3.3960573476702507, "b": 20, "c": 1116}
+{"mm": "07", "hh": "07", "a": 21.962365591397848, "b": 60, "c": 1116}
+{"mm": "07", "hh": "08", "a": 67.54480286738351, "b": 140, "c": 1116}
+{"mm": "07", "hh": "09", "a": 138.34229390681003, "b": 270, "c": 1116}
+{"mm": "07", "hh": "10", "a": 232.58960573476702, "b": 440, "c": 1116}
+{"mm": "07", "hh": "11", "a": 350.92792792792795, "b": 630, "c": 1110}
+{"mm": "07", "hh": "12", "a": 491.52329749103944, "b": 840, "c": 1116}
+{"mm": "07", "hh": "13", "a": 644.6812386156648, "b": 1050, "c": 1098}
+{"mm": "07", "hh": "14", "a": 793.8351254480286, "b": 1240, "c": 1116}
+{"mm": "07", "hh": "15", "a": 932.6086956521739, "b": 1430, "c": 1104}
+{"mm": "07", "hh": "16", "a": 1048.502824858757, "b": 1580, "c": 1062}
+{"mm": "07", "hh": "17", "a": 1154.465579710145, "b": 1710, "c": 1104}
+{"mm": "07", "hh": "18", "a": 1222.142857142857, "b": 1790, "c": 1092}
+{"mm": "07", "hh": "19", "a": 1266.021505376344, "b": 1830, "c": 1116}
+{"mm": "07", "hh": "20", "a": 1278.6021505376343, "b": 1840, "c": 1116}
+{"mm": "07", "hh": "21", "a": 1276.7391304347825, "b": 1840, "c": 1104}
+{"mm": "07", "hh": "22", "a": 1278.3783783783783, "b": 1840, "c": 1110}
+{"mm": "07", "hh": "23", "a": 1279.8918918918919, "b": 1840, "c": 1110}
+</pre>
+
+"Group by" just segregates the data by the values you provide.  It is the same function as SQL's "group by".  Example groups by 2 values, substring of .now which gets month, and substring of .now which gets hour.  Once the data is segregated, you can apply aggregate functions to specific fields, and display them.  The example shows how to output each group in a separate JSON object.  The object's mm is filled from value in first groupbyjson argument(arg[0]), and hh field is filled with 2nd argument to groupbyjson(arg[1]).  a is the avg of yield for that hour and month, b is max, and c is count of records in that segregated bin.
+
+However my version of groupbyjson.py runs extremely slow versus jq's implementation.  This is how to run the same group by in jq:
+```
+cat victron_json/victron*.json | jq -s '.|group_by(.now[5:7],.now[11:13]) | map([first.now[5:7],first.now[11:13],(map(.payload.yield_today)| max),(map(.payload.yield_today)| add/length)])' | jq -c '.[]'
+```
+
+<pre>
+["07","00",1840,1295.483870967742]
+["07","01",1840,887.5268817204301]
+["07","02",1740,56.12903225806452]
+["07","03",1740,37.41935483870968]
+["07","04",0,0]
+["07","05",0,0]
+["07","06",20,3.3960573476702507]
+["07","07",60,21.962365591397848]
+["07","08",140,67.54480286738351]
+["07","09",270,138.34229390681003]
+["07","10",440,232.58960573476702]
+["07","11",630,350.92792792792795]
+["07","12",840,491.52329749103944]
+["07","13",1050,644.6812386156648]
+["07","14",1240,793.8351254480286]
+["07","15",1430,932.6086956521739]
+["07","16",1580,1048.502824858757]
+["07","17",1710,1154.465579710145]
+["07","18",1790,1222.142857142857]
+["07","19",1830,1266.021505376344]
+["07","20",1840,1278.6021505376343]
+["07","21",1840,1276.7391304347825]
+["07","22",1840,1278.3783783783783]
+["07","23",1840,1279.8918918918919]
+</pre>
+
+However my groupbyjson.py is slower than jq
+<pre>
+bob@fedora:~/solarjson/victron_json$ date && cat victron*.json | jq -s '.|group_by(.now[5:7],.now[11:13]) | map([first.now[5:7],first.now[11:13],(map(.payload.battery_charging_current)| max),(map(.payload.battery_charging_current*24)| add/length),(map(.payload.yield_today)| max),(map(.payload.yield_today)| add/length)])' &>/dev/null && date
+Mon Sep  2 05:28:46 PM PDT 2024
+Mon Sep  2 05:29:08 PM PDT 2024
+
+bob@fedora:~/solarjson/victron_json$ date && cat victron*.json | ../../groupbyjson.py .now[5:7] .now[11:13] '{"mm":arg[0],"hh":arg[1],"a":avg(.payload.yield_today),"b":max(.payload.yield_today),"c":count(.now)}'&>/dev/null && date
+Mon Sep  2 05:30:43 PM PDT 2024
+Mon Sep  2 05:32:52 PM PDT 2024
+</pre>
+Much slower.  6x slower.
+jq    vs groupbyjson.py
+25sec vs 2min
+
+I admit I thought I could write a more competitive version of groupby, when jq ran so slow on my pi and sometimes crashed if too many groupby elements were included.  I thought I could write a faster version in python.  I could not.  But I got groupbyjson.py working.  There is value in keeping this code around.  If I ever need to implement my own aggregate function that jq does not support, even if 6x slower, 6x slower is better than thing.  You can add your own Aggregate functions too:
+
+To add more aggregate functions, 
+1. Add new classes by copying one of the Aggregate* classes
+    A. change the identify() function, to the name of your new function
+    B. isgoodarg() function, to statically validate the argument list.  Existing examples only validate the number of arguments.
+    C. change clone(), to return a new instance of itself
+    D. change add(), to implement the incremental steps aggregation function, with each new field value submitted to it
+    E. change result(), to finalize the calculation and return the result, in any JSON compatible datatype
+2. Modifying the JsonTransform class, in 2 places
+    A. This is the most important step.  Adding the new class name in the
+    array of classes that it will check if there is a function...
+    SUPPORTED=[AggregateCount,AggregateSum,AggregateMin,AggregateMax, \
+        AggregateAvg,AggregateStdev,AggregateStrAppend,AggregateLstAppend, \
+        AggregateLinreg, **Add the new class name**
+    ]
+    B. Adding the name in the regex, in JsonTransform class's __init__: function.
+    regex = r"(sum|avg|min|max|count|stdev|linreg**Add same name as 1A**)\(((\.[^,\s\)]+)(,.[^,\)\s]+)*)\)" 
+    This function is just searching for a string that might be a function.  It is a shallow validation.  And used later to identify the functions in the output JSON, to later replace them
+
+
 
 
 ## Explanation of testdata
@@ -187,6 +295,7 @@ yUSB0", "status": 2, "mode": 3, "time": "2024-07-13T07:20:00.000Z", "ept": 0.005
 
 jqjoin.py will accept multiple objects from stdin,
 BUT only accepts first JSON object per file WHEN as directory argument.
+
 
 
 
