@@ -287,8 +287,9 @@ To add more aggregate functions,
     ```
     This function is just searching for a string that might be a function.  It is a shallow validation.  And used later to identify the functions in the output JSON, to later replace them
 
-
-
+References (I haven't writen one yet, but I'm sure I got the idea from here at one point):
+* https://learn.microsoft.com/en-us/sql/t-sql/statements/create-aggregate-transact-sql?view=sql-server-ver16
+* https://www.mssqltips.com/sqlservertip/2022/concat-aggregates-sql-server-clr-function/
 
 ## Explanation of testdata
 *gpspipe_json/* has gps data, multiple JSON objects per file
