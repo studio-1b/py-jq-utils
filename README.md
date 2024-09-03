@@ -177,13 +177,13 @@ yUSB0", "status": 2, "mode": 3, "time": "2024-07-13T07:20:00.000Z", "ept": 0.005
 ## Program: groupbyjson.py
 Write your own aggregate function.  But first, how you execute it:
 ```
-./groupbyjson.py [groupby key 1]...[groupby key n] [json of aggregate]
+echo "[JSON]" | ./groupbyjson.py [groupby key 1]...[groupby key n] [json of aggregate]
 ```
 It does NOT accept JSON array thru stdin, but a stream of JSON objects only delimited by close of a JSON object.
 
 For example, avg, count and max are implemented, and can be used like:
 ```
-victron_json/victron*.json | ./groupbyjson.py .now[5:7] .now[11:13] '{"mm":arg[0],"hh":arg[1],"a":avg(.payload.yield_today),"b":max(.payload.yield_today),"c":count(.now)}' 2>/dev/null
+cat victron_json/victron*.json | ./groupbyjson.py .now[5:7] .now[11:13] '{"mm":arg[0],"hh":arg[1],"a":avg(.payload.yield_today),"b":max(.payload.yield_today),"c":count(.now)}' 2>/dev/null
 ```
 produces
 <pre>
@@ -303,7 +303,28 @@ References (I haven't writen one yet, but I'm sure I got the idea from here at o
 jqjoin.py will accept multiple objects from stdin,
 BUT only accepts first JSON object per file WHEN as directory argument.
 
+Generally most of the utilities follow the convention that input-json pipe-redirected into the utility, can accept multiple JSON objects w/o delimiters, and will output to stdout in same streamed JSON object format w/o delimiters.  If you need the data in an single array JSON object, for consumption in a JSON deserializer, you can convert the conventional streamed-JSON into this array using "jq" with "-s":
+```
+echo '{"a":1}{"a":2}' | jq -s
+```
+will produce
+<pre>
+<b>[</b>
+{"a":1}<b>,</b>b>
+{"a":2}
+<b>]</b>
+</pre>
 
+So
+```
+cat victron_json/victron*.json | ./groupbyjson.py .now[5:7]  '{"mm":arg[0],"a":avg(.payload.yield_today),"b":max(.payload.yield_today)}' 2>/dev/null <b>| jq -s</b>
+```
+should produce something like:
+<pre>
+<b>[</b>
+{"mm": "07", "a": 1295.483870967742, "b": 1840}
+<b>]</b>
+</pre>
 
 
 
