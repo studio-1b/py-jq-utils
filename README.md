@@ -217,6 +217,12 @@ produces
 
 It also has a hist() function, to allow creation of histograms, which is a form of aggregation into counts in bins (which would be complicated to implement in jq):
 ```
+echo "[JSON]" | ./groupbyjson.py [groupby key 1]...[groupby key n] '{"hh":arg[0],"hourly_a":hist(.payload.battery_charging_current,2,4,6,8,10,12,14,16,18)}'
+```
+Same 1-to-n number of group-by parameters as before, but now [json w/ aggregate] supports hist(), which is same as avg or min or count that accept 1 field to aggregate, but hist() also accepts unlimited amount of const values to act as bin-boundaries.  You can do this with group-by in jq or SQL, but you have to create a computed-column with the bin name in group-by statement.
+
+Example:
+```
 cat victron_json/victron* | ~/groupbyjson.py .now[11:13] '{"hh":arg[0],"hourly_a":hist(.payload.battery_charging_current,2,4,6,8,10,12,14,16,18)}'
 ```
 which produces
