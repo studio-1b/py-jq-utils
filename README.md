@@ -215,6 +215,18 @@ produces
 
 "Group by" just segregates the data by the values you provide.  It is the same function as SQL's "group by".  Example groups by 2 values, substring of .now which gets month, and substring of .now which gets hour.  Once the data is segregated, you can apply aggregate functions to specific fields, and display them.  The example shows how to output each group in a separate JSON object.  The object's mm is filled from value in first groupbyjson argument(arg[0]), and hh field is filled with 2nd argument to groupbyjson(arg[1]).  a is the avg of yield for that hour and month, b is max, and c is count of records in that segregated bin.
 
+It also has a hist() function, to allow creation of histograms, which is a form of aggregation into counts in bins (which would be complicated to implement in jq):
+```
+cat victron_json/victron* | ~/groupbyjson.py .now[11:13] '{"hh":arg[0],"hourly_a":hist(.payload.battery_charging_current,2,4,6,8,10,12,14,16,18)}'
+```
+which produces
+<pre>
+...
+{"hh": "12", "hourly_a": [{"name": "<2", "min": null, "max": 2, "count": 2259}, {"name": "2-4", "min": 2, "max": 4, "count": 1677}, {"name": "4-6", "min": 4, "max": 6, "count": 1049}, {"name": "6-8", "min": 6, "max": 8, "count": 609}, {"name": "8-10", "min": 8, "max": 10, "count": 477}, {"name": "10-12", "min": 10, "max": 12, "count": 516}, {"name": "12-14", "min": 12, "max": 14, "count": 1026}, {"name": "14-16", "min": 14, "max": 16, "count": 868}, {"name": "16-18", "min": 16, "max": 18, "count": 95}, {"name": ">18", "min": 18, "max": null, "count": 10}]}
+{"hh": "13", "hourly_a": [{"name": "<2", "min": null, "max": 2, "count": 2388}, {"name": "2-4", "min": 2, "max": 4, "count": 1586}, {"name": "4-6", "min": 4, "max": 6, "count": 838}, {"name": "6-8", "min": 6, "max": 8, "count": 681}, {"name": "8-10", "min": 8, "max": 10, "count": 499}, {"name": "10-12", "min": 10, "max": 12, "count": 559}, {"name": "12-14", "min": 12, "max": 14, "count": 923}, {"name": "14-16", "min": 14, "max": 16, "count": 887}, {"name": "16-18", "min": 16, "max": 18, "count": 107}, {"name": ">18", "min": 18, "max": null, "count": 0}]}
+...
+</pre>
+
 However my version of groupbyjson.py runs extremely slow versus jq's implementation.  This is how to run the same group by in jq:
 ```
 cat victron_json/victron*.json | jq -s '.|group_by(.now[5:7],.now[11:13]) | map([first.now[5:7],first.now[11:13],(map(.payload.yield_today)| max),(map(.payload.yield_today)| add/length)])' | jq -c '.[]'
