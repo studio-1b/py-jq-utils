@@ -309,6 +309,55 @@ References (I haven't writen one yet, but I'm sure I got the idea from here at o
 * https://learn.microsoft.com/en-us/sql/t-sql/statements/create-aggregate-transact-sql?view=sql-server-ver16
 * https://www.mssqltips.com/sqlservertip/2022/concat-aggregates-sql-server-clr-function/
 
+
+
+## Program: gpxml2json.py
+GPSD is a Linux daemon, that connects to supported GPSD dongles that are usually serial based, and provides GPS data, to a suite of GPS utilities for Linux.  CGPS is interactive GPS data display.  Gpspipe will save data to file, in xml or json format.  If you happen to save data in XML, but want to process it in JSON, you have to convert it.  They don't build a utlity for this, so I did.
+
+Below, is how to run the utility, with the provided test data in "gpsd-xml.7z", to output json to stdout, piped to jq to format.
+```
+python gpxml2json.py - trackstarting.20170427+100002.xml trackstarting.20170826+000002.xml | jq .
+```
+produces
+<pre>
+...
+{
+  "lat": 34.08964,
+  "lon": -107.534983,
+  "ele": 2143.2,
+  "time": "2017-04-27T17:29:11.000Z",
+  "src": "GPSD",
+  "fix": "3d"
+}
+{
+  "lat": 34.089602,
+  "lon": -107.53475,
+  "ele": 2143.2,
+  "time": "2017-04-27T17:29:12.000Z",
+  "src": "GPSD",
+  "fix": "3d"
+}
+...
+</pre>
+
+
+Below, is how to run the comman on test xml, to produce a different file, per day
+```
+python gpxml2json.py monthly.json --time:0:10 C:\Users\Bob\Downloads\GPS\trackstarting.20170427+100002.xml C:\Users\Bob\Downloads\GPS\trackstarting.20170826+000002.xml
+```
+which should create these files, based on output filename "monthly.json", and it appends the grouping argument(--time:0:10) to the file.
+<pre>
+06/18/2025  05:52 PM         2,337,815 monthly2017-04-27.gpx.json
+06/18/2025  05:52 PM         1,209,143 monthly2017-04-28.gpx.json
+06/18/2025  05:52 PM         2,285,549 monthly2017-08-26.gpx.json
+06/18/2025  05:52 PM           132,957 monthly2017-08-27.gpx.json
+</pre>
+The grouping argument, says to take time field, col 0-10, and group all the converted GPS JSON data with same value, in the same file suffixed w same value.  Since col0-10 of "2017-08-27T00:00:18.000Z", is the date part, this creates files that gpsdata is all on a single day.
+
+
+
+
+
 ## Explanation of testdata
 *gpspipe_json/* has gps data, multiple JSON objects per file
 
